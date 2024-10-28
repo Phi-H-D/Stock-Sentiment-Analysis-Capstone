@@ -1,0 +1,2 @@
+pip install pandas feedparser yfinance pytz
+pip install streamlit pandas plotly python-dotenv numpy
