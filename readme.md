@@ -29,8 +29,7 @@ A real-time dashboard for analyzing financial news sentiment and market trends. 
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd <project-directory>
+git clone [<repository-url>](https://github.com/Phi-H-D/Stock-Sentiment-Analysis-Capstone)
 ```
 
 2. Create and activate a virtual environment (not required):
