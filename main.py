@@ -27,7 +27,7 @@ def main():
     merged_data = merge_data(news_data, screener_data)
 
     print("Fetching current prices...")
-    unique_tickers = merged_data['Ticker'].unique()
+    unique_tickers = merged_data['TICKER'].unique()
     current_prices = fetch_current_prices(unique_tickers)
 
     print("Calculating trends...")

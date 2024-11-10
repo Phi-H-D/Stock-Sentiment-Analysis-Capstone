@@ -1,2 +1,3 @@
 pip install pandas feedparser yfinance pytz
 pip install streamlit pandas plotly python-dotenv numpy
+pip install nltk vaderSentiment transformers torch beautifulsoup4 requests pandas yfinance feedparser pytz finvader
