@@ -12,8 +12,8 @@ A real-time dashboard for analyzing financial news sentiment and market trends. 
 - Market data integration with real-time price tracking
 - Interactive dashboard with:
   - Sentiment analysis results table
-  - Price trend visualization
-  - Volume-weighted sentiment analysis
+  - Price-Sentiment trend visualization
+  - Relative Volume-weighted sentiment analysis
   - Correlation metrics
 - Auto-refresh capability for real-time monitoring
 - Data export functionality
