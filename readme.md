@@ -49,7 +49,7 @@ pip install -r requirements.txt
 python -c "import nltk; nltk.download('vader_lexicon')"
 ```
 
-5. Create a `.env` file in the project root and add your FINVIZ API token:
+5. Create a `.env` file in the project root and add your FINVIZ API token or simply launch the Dashboard and input your API Token there:
 ```
 FINVIZ_API_TOKEN=your_token_here
 ```
