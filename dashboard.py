@@ -1,17 +1,15 @@
-import streamlit as st
+import os
+import threading
+import time
+from datetime import datetime, timedelta
+from pathlib import Path
+
 import pandas as pd
 import plotly.express as px
-from datetime import datetime, timedelta
-import yfinance as yf
-import numpy as np
-from pathlib import Path
-import time
-import schedule
-import threading
-from queue import Queue
+import streamlit as st
 import subprocess
-import os
 from dotenv import load_dotenv, set_key
+
 
 # Get the directory where the dashboard script is located
 SCRIPT_DIR = Path(__file__).parent.absolute()
