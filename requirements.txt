@@ -1,3 +1,30 @@
-pip install pandas feedparser yfinance pytz
-pip install streamlit pandas plotly python-dotenv numpy
-pip install nltk vaderSentiment transformers torch beautifulsoup4 requests pandas yfinance feedparser pytz finvader
+# Data manipulation and analysis
+pandas>=2.0.0
+numpy>=1.24.0
+
+# API requests and web scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+feedparser>=6.0.0
+
+# Financial data and analysis
+yfinance>=0.2.35
+finvader>=0.1.0
+pytz>=2023.3
+
+# Natural Language Processing
+nltk>=3.8.0
+transformers>=4.36.0
+torch>=2.1.0  # Required for transformers
+
+# Data visualization
+plotly>=5.18.0
+
+# Web dashboard
+streamlit>=1.31.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Note: After installing, you'll need to download NLTK data:
+# python -c "import nltk; nltk.download('vader_lexicon')"
