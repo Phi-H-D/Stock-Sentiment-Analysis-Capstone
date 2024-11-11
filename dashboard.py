@@ -1,9 +1,7 @@
 import os
-import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -21,11 +19,15 @@ st.set_page_config(
     layout="wide"
 )
 
-# Initialize session state
-if 'refresh_thread' not in st.session_state:
-    st.session_state.refresh_thread = None
-if 'stop_refresh' not in st.session_state:
-    st.session_state.stop_refresh = False
+# Initialize session state variables
+if 'auto_refresh' not in st.session_state:
+    st.session_state.auto_refresh = False
+if 'last_refresh' not in st.session_state:
+    st.session_state.last_refresh = None
+if 'next_refresh' not in st.session_state:
+    st.session_state.next_refresh = None
+if 'refresh_interval' not in st.session_state:
+    st.session_state.refresh_interval = 5
 
 def save_api_token(token):
     """Save the FINVIZ API token to .env file"""
@@ -35,17 +37,14 @@ def save_api_token(token):
     
     set_key(str(env_path), 'FINVIZ_API_TOKEN', token)
     st.success("API token saved successfully!")
-    # Ensure the token is immediately available to child processes
     os.environ['FINVIZ_API_TOKEN'] = token
 
 def run_data_updates():
     """Run the main.py and RSS feed analyzer scripts"""
     try:
-        # Construct full paths to scripts
         main_script = SCRIPT_DIR / 'main.py'
         rss_script = SCRIPT_DIR / 'rss feed with sentiment analyzers.py'
         
-        # Check if scripts exist
         if not main_script.exists():
             st.error(f"Cannot find main.py in {SCRIPT_DIR}")
             return False
@@ -53,47 +52,28 @@ def run_data_updates():
             st.error(f"Cannot find rss feed with sentiment analyzers.py in {SCRIPT_DIR}")
             return False
         
-        # Run scripts with correct working directory
         subprocess.run(['python', str(main_script)], 
                       check=True, 
                       cwd=str(SCRIPT_DIR))
         subprocess.run(['python', str(rss_script)], 
                       check=True,
                       cwd=str(SCRIPT_DIR))
+        
+        # Update last refresh time and calculate next refresh time
+        st.session_state.last_refresh = datetime.now()
+        st.session_state.next_refresh = st.session_state.last_refresh + timedelta(minutes=st.session_state.refresh_interval)
         return True
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         st.error(f"Error running updates: {str(e)}")
         return False
-    except Exception as e:
-        st.error(f"Unexpected error: {str(e)}")
-        return False
 
-def auto_refresh(interval_minutes):
-    """Background thread for auto-refresh"""
-    while not st.session_state.stop_refresh:
-        if run_data_updates():
-            st.experimental_rerun()
-        time.sleep(interval_minutes * 60)
-
-def start_auto_refresh(interval_minutes):
-    """Start the auto-refresh thread"""
-    if st.session_state.refresh_thread is not None:
-        st.session_state.stop_refresh = True
-        st.session_state.refresh_thread.join()
-    
-    st.session_state.stop_refresh = False
-    st.session_state.refresh_thread = threading.Thread(
-        target=auto_refresh,
-        args=(interval_minutes,)
-    )
-    st.session_state.refresh_thread.start()
-
-def stop_auto_refresh():
-    """Stop the auto-refresh thread"""
-    if st.session_state.refresh_thread is not None:
-        st.session_state.stop_refresh = True
-        st.session_state.refresh_thread.join()
-        st.session_state.refresh_thread = None
+def check_auto_refresh():
+    """Check if it's time to refresh based on the interval"""
+    if st.session_state.auto_refresh and st.session_state.next_refresh:
+        if datetime.now() >= st.session_state.next_refresh:
+            with st.spinner("Auto-refreshing data..."):
+                if run_data_updates():
+                    st.rerun()
 
 def load_data():
     """Load data with proper path handling"""
@@ -161,7 +141,7 @@ with st.sidebar:
     
     # Auto-refresh settings
     st.subheader("Auto-refresh Settings")
-    refresh_interval = st.selectbox(
+    st.session_state.refresh_interval = st.selectbox(
         "Refresh Interval",
         options=[5, 10, 20, 30],
         format_func=lambda x: f"Every {x} minutes"
@@ -170,12 +150,15 @@ with st.sidebar:
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Start Auto-refresh"):
-            start_auto_refresh(refresh_interval)
-            st.success(f"Auto-refresh started ({refresh_interval} min)")
+            st.session_state.auto_refresh = True
+            st.session_state.last_refresh = datetime.now()
+            st.session_state.next_refresh = st.session_state.last_refresh + timedelta(minutes=st.session_state.refresh_interval)
+            st.success(f"Auto-refresh started ({st.session_state.refresh_interval} min)")
     
     with col2:
         if st.button("Stop Auto-refresh"):
-            stop_auto_refresh()
+            st.session_state.auto_refresh = False
+            st.session_state.next_refresh = None
             st.success("Auto-refresh stopped")
     
     # Manual refresh button
@@ -186,8 +169,13 @@ with st.sidebar:
                 st.rerun()
 
     # Display auto-refresh status
-    if st.session_state.refresh_thread is not None:
-        st.info(f"Auto-refresh is active ({refresh_interval} min interval)")
+    if st.session_state.auto_refresh:
+        st.info(f"Auto-refresh is active ({st.session_state.refresh_interval} min interval)")
+        if st.session_state.next_refresh:
+            st.write("Next refresh at:", st.session_state.next_refresh.strftime("%I:%M:%S %p"))
+
+# Check for auto-refresh at the start of each run
+check_auto_refresh()
 
 def format_sentiment(val):
     if pd.isna(val):
