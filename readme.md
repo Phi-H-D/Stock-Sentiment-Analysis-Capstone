@@ -17,11 +17,12 @@ A real-time dashboard for analyzing financial news sentiment and market trends. 
   - Correlation metrics
 - Auto-refresh capability for real-time monitoring
 - Data export functionality
+- Demo mode for testing and demonstration
 
 ## Prerequisites
 
 - Python 3.8 or higher
-- FINVIZ API Token (for market data)
+- FINVIZ API Token (for market data, not needed for demo mode)
 - Sufficient disk space for ML models
 - Internet connection for real-time data fetching
 
@@ -63,7 +64,8 @@ FINVIZ_API_TOKEN=your_token_here
 ├── rss feed with sentiment analyzers.py  # News fetching and sentiment analysis
 ├── main.py                  # Main script for data pipeline
 ├── requirements.txt         # Project dependencies
-└── config.py               # Configuration settings
+├── config.py               # Configuration settings
+└── dummy_data_generator.py # Demo data generation script
 ```
 
 ## Dashboard Usage
@@ -73,9 +75,25 @@ FINVIZ_API_TOKEN=your_token_here
 streamlit run dashboard.py
 ```
 
+### Operating Modes
+
+1. **Live Mode (Default)**
+   - Requires FINVIZ API token
+   - Fetches real-time data from financial sources
+   - Supports auto-refresh and manual updates
+   - Full access to all dashboard features
+
+2. **Demo Mode**
+   - No API token required
+   - Uses generated realistic data
+   - Perfect for testing and demonstrations
+   - Includes simulated news, sentiment, and volume data
+   - Can be regenerated on demand
+   - Toggle demo mode in the dashboard sidebar
+
 ### Data Refresh Options
 
-1. **Manual Refresh**
+1. **Manual Refresh** (Live Mode Only)
    - Click "Refresh Now" button in the sidebar
    - This will automatically:
      1. Run data collection from FINVIZ (main.py)
@@ -83,7 +101,7 @@ streamlit run dashboard.py
      3. Update the dashboard with new data
    - Progress will be shown during refresh
 
-2. **Auto-Refresh**
+2. **Auto-Refresh** (Live Mode Only)
    - Set desired interval (5, 10, 20, or 30 minutes)
    - Click "Start Auto-refresh" to begin automatic updates
    - Each refresh cycle will:
@@ -93,7 +111,12 @@ streamlit run dashboard.py
    - Status indicator shows when auto-refresh is active
    - Click "Stop Auto-refresh" to disable
 
-3. **API Token Management**
+3. **Demo Data Regeneration** (Demo Mode Only)
+   - Click "Regenerate Demo Data" to create new sample data
+   - Instantly updates all visualizations
+   - Useful for testing different scenarios
+
+4. **API Token Management** (Live Mode Only)
    - Enter/update FINVIZ API token directly in dashboard
    - Token is securely saved to .env file
    - New token will be used in subsequent data refreshes
@@ -103,7 +126,7 @@ streamlit run dashboard.py
 ### Sentiment Analysis Tab
 - Filter by ticker symbols
 - Set minimum sentiment threshold
-- Filter by relative volume
+- Filter by relative volume (ranges from 0 to 1000x)
 - View detailed sentiment scores from multiple models
 - Export data as CSV
 
@@ -112,13 +135,19 @@ streamlit run dashboard.py
 - Volume-weighted sentiment analysis
 - Sentiment distribution visualization
 - Correlation metrics
+- Quadrant analysis with center lines
 
 ## Data Pipeline
 
 1. **Data Collection**
-   - News data from Yahoo Finance RSS feeds
-   - Market data from FINVIZ API
-   - Real-time price data from Yahoo Finance
+   - Live Mode:
+     - News data from Yahoo Finance RSS feeds
+     - Market data from FINVIZ API
+     - Real-time price data from Yahoo Finance
+   - Demo Mode:
+     - Generated realistic news data
+     - Simulated market data with varied volume patterns
+     - Correlated price movements with sentiment
 
 2. **Sentiment Analysis**
    - NLTK: General sentiment analysis
@@ -130,13 +159,6 @@ streamlit run dashboard.py
    - Price trend calculation
    - Volume-weighted sentiment aggregation
 
-## Auto-Refresh Configuration
-
-The dashboard supports automatic data updates with configurable intervals:
-- Available intervals: 5, 10, 20, or 30 minutes
-- Manual refresh option available
-- Status indicator shows current auto-refresh state
-
 ## Troubleshooting
 
 Common issues and solutions:
@@ -145,12 +167,19 @@ Common issues and solutions:
    - Ensure all required CSV files exist
    - Check file permissions
    - Run main.py to regenerate data files
+   - Or switch to demo mode for testing
 
 2. **API Token Issues**
    - Verify FINVIZ API token in .env file
    - Check token validity and permissions
+   - Use demo mode if token is unavailable
 
 3. **Sentiment Model Errors**
    - Ensure sufficient disk space for models
    - Check internet connection for model downloads
    - Verify NLTK data installation
+
+4. **Demo Mode Issues**
+   - Ensure dummy_data_generator.py is in the project directory
+   - Check Python environment has required packages
+   - Try regenerating demo data from the dashboard

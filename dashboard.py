@@ -28,7 +28,10 @@ if 'next_refresh' not in st.session_state:
     st.session_state.next_refresh = None
 if 'refresh_interval' not in st.session_state:
     st.session_state.refresh_interval = 5
+if 'demo_mode' not in st.session_state:
+    st.session_state.demo_mode = False
 
+    
 def save_api_token(token):
     """Save the FINVIZ API token to .env file"""
     env_path = SCRIPT_DIR / '.env'
@@ -66,6 +69,30 @@ def run_data_updates():
     except Exception as e:
         st.error(f"Error running updates: {str(e)}")
         return False
+    
+def load_demo_data():
+    """Generate and load demo data"""
+    try:
+        from dummy_data_generator import generate_dummy_data
+        sentiment_df, screener_df = generate_dummy_data()
+        
+        # Merge the dataframes
+        merged_df = pd.merge(
+            sentiment_df,
+            screener_df[['Ticker', 'Relative Volume']],
+            left_on='ticker',
+            right_on='Ticker',
+            how='left'
+        )
+        
+        # Clean up columns
+        merged_df.drop('Ticker', axis=1, inplace=True)
+        merged_df['Relative Volume'] = merged_df['Relative Volume'].fillna(1.0)
+        
+        return merged_df
+    except Exception as e:
+        st.error(f"Error loading demo data: {str(e)}")
+        return None
 
 def check_auto_refresh():
     """Check if it's time to refresh based on the interval"""
@@ -77,6 +104,9 @@ def check_auto_refresh():
 
 def load_data():
     """Load data with proper path handling"""
+    if st.session_state.demo_mode:
+        return load_demo_data()
+    
     try:
         # Use correct paths for data files
         sentiment_path = SCRIPT_DIR / 'yahoo_rss_news_with_sentiment_analysis.csv'
@@ -124,55 +154,66 @@ def load_data():
 with st.sidebar:
     st.header("Settings")
     
-    # Display current script directory
-    st.text(f"Working directory:\n{SCRIPT_DIR}")
+    # Demo mode toggle
+    demo_mode = st.checkbox("Demo Mode", value=st.session_state.demo_mode)
+    if demo_mode != st.session_state.demo_mode:
+        st.session_state.demo_mode = demo_mode
+        st.rerun()
     
-    # API Token Management
-    st.subheader("API Token Management")
-    load_dotenv(SCRIPT_DIR / '.env')
-    current_token = os.getenv('FINVIZ_API_TOKEN', '')
-    
-    if current_token:
-        st.write("Current token: " + "*" * len(current_token))
-    
-    new_token = st.text_input("Enter new FINVIZ API token", type="password")
-    if st.button("Save Token"):
-        save_api_token(new_token)
-    
-    # Auto-refresh settings
-    st.subheader("Auto-refresh Settings")
-    st.session_state.refresh_interval = st.selectbox(
-        "Refresh Interval",
-        options=[5, 10, 20, 30],
-        format_func=lambda x: f"Every {x} minutes"
-    )
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Start Auto-refresh"):
-            st.session_state.auto_refresh = True
-            st.session_state.last_refresh = datetime.now()
-            st.session_state.next_refresh = st.session_state.last_refresh + timedelta(minutes=st.session_state.refresh_interval)
-            st.success(f"Auto-refresh started ({st.session_state.refresh_interval} min)")
-    
-    with col2:
-        if st.button("Stop Auto-refresh"):
-            st.session_state.auto_refresh = False
-            st.session_state.next_refresh = None
-            st.success("Auto-refresh stopped")
-    
-    # Manual refresh button
-    if st.button("Refresh Now"):
-        with st.spinner("Updating data..."):
-            if run_data_updates():
-                st.success("Data updated successfully!")
-                st.rerun()
+    if not st.session_state.demo_mode:
+        # Regular mode settings
+        st.text(f"Working directory:\n{SCRIPT_DIR}")
+        
+        # API Token Management
+        st.subheader("API Token Management")
+        load_dotenv(SCRIPT_DIR / '.env')
+        current_token = os.getenv('FINVIZ_API_TOKEN', '')
+        
+        if current_token:
+            st.write("Current token: " + "*" * len(current_token))
+        
+        new_token = st.text_input("Enter new FINVIZ API token", type="password")
+        if st.button("Save Token"):
+            save_api_token(new_token)
+        
+        # Auto-refresh settings (only show in regular mode)
+        st.subheader("Auto-refresh Settings")
+        st.session_state.refresh_interval = st.selectbox(
+            "Refresh Interval",
+            options=[5, 10, 20, 30],
+            format_func=lambda x: f"Every {x} minutes"
+        )
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Start Auto-refresh"):
+                st.session_state.auto_refresh = True
+                st.session_state.last_refresh = datetime.now()
+                st.session_state.next_refresh = st.session_state.last_refresh + timedelta(minutes=st.session_state.refresh_interval)
+                st.success(f"Auto-refresh started ({st.session_state.refresh_interval} min)")
+        
+        with col2:
+            if st.button("Stop Auto-refresh"):
+                st.session_state.auto_refresh = False
+                st.session_state.next_refresh = None
+                st.success("Auto-refresh stopped")
+        
+        # Manual refresh button
+        if st.button("Refresh Now"):
+            with st.spinner("Updating data..."):
+                if run_data_updates():
+                    st.success("Data updated successfully!")
+                    st.rerun()
 
-    # Display auto-refresh status
-    if st.session_state.auto_refresh:
-        st.info(f"Auto-refresh is active ({st.session_state.refresh_interval} min interval)")
-        if st.session_state.next_refresh:
-            st.write("Next refresh at:", st.session_state.next_refresh.strftime("%I:%M:%S %p"))
+        # Display auto-refresh status
+        if st.session_state.auto_refresh:
+            st.info(f"Auto-refresh is active ({st.session_state.refresh_interval} min interval)")
+            if st.session_state.next_refresh:
+                st.write("Next refresh at:", st.session_state.next_refresh.strftime("%I:%M:%S %p"))
+    else:
+        st.info("Demo mode active - using generated data")
+        if st.button("Regenerate Demo Data"):
+            st.rerun()
 
 # Check for auto-refresh at the start of each run
 check_auto_refresh()
@@ -403,13 +444,19 @@ with tab2:
         
         sentiment_column = sentiment_options[selected_sentiment]
         
-        # Create scatter plot with size based on relative volume
+        # Calculate the maximum absolute values for both axes to make plot symmetric
+        max_sentiment = max(abs(filtered_data[sentiment_column].min()), 
+                          abs(filtered_data[sentiment_column].max()))
+        max_price = max(abs(filtered_data['price_change'].min()), 
+                       abs(filtered_data['price_change'].max()))
+        
+        # Create scatter plot with quadrant lines
         fig = px.scatter(
             filtered_data,
             x=sentiment_column,
             y="price_change",
             color="ticker",
-            size="Relative Volume",  # Size based on relative volume
+            size="Relative Volume",
             hover_data=['title', 'publish_time', 'Relative Volume'],
             title=f"Trend vs {selected_sentiment} (Size indicates Relative Volume)",
             labels={
@@ -420,11 +467,81 @@ with tab2:
             }
         )
         
+        # Update layout with contrasting center lines
         fig.update_layout(
             showlegend=True,
             height=600,
-            xaxis_title=selected_sentiment,
-            yaxis_title="Price Trend ($)"
+            xaxis=dict(
+                zeroline=False,  # We'll add our own zero line
+                range=[-max_sentiment * 1.1, max_sentiment * 1.1],
+                gridcolor='rgba(128,128,128,0.2)',  # Subtle grid
+                title=selected_sentiment
+            ),
+            yaxis=dict(
+                zeroline=False,  # We'll add our own zero line
+                range=[-max_price * 1.1, max_price * 1.1],
+                gridcolor='rgba(128,128,128,0.2)',  # Subtle grid
+                title="Price Trend ($)"
+            ),
+            shapes=[
+                # Vertical line at x=0
+                dict(
+                    type='line',
+                    x0=0, x1=0,
+                    y0=-max_price * 1.1,
+                    y1=max_price * 1.1,
+                    line=dict(
+                        color='rgb(255, 195, 0)',  # Bright gold
+                        width=2  # Thicker line
+                    )
+                ),
+                # Horizontal line at y=0
+                dict(
+                    type='line',
+                    x0=-max_sentiment * 1.1,
+                    x1=max_sentiment * 1.1,
+                    y0=0, y1=0,
+                    line=dict(
+                        color='rgb(255, 195, 0)',  # Bright gold
+                        width=2  # Thicker line
+                    )
+                )
+            ],
+            # Add quadrant labels
+            annotations=[
+                dict(
+                    x=max_sentiment * 0.9,
+                    y=max_price * 0.9,
+                    text="Positive Sentiment<br>Price Increase",
+                    showarrow=False,
+                    font=dict(size=10, color='rgba(255,255,255,0.8)'),
+                    align='center'
+                ),
+                dict(
+                    x=-max_sentiment * 0.9,
+                    y=max_price * 0.9,
+                    text="Negative Sentiment<br>Price Increase",
+                    showarrow=False,
+                    font=dict(size=10, color='rgba(255,255,255,0.8)'),
+                    align='center'
+                ),
+                dict(
+                    x=max_sentiment * 0.9,
+                    y=-max_price * 0.9,
+                    text="Positive Sentiment<br>Price Decrease",
+                    showarrow=False,
+                    font=dict(size=10, color='rgba(255,255,255,0.8)'),
+                    align='center'
+                ),
+                dict(
+                    x=-max_sentiment * 0.9,
+                    y=-max_price * 0.9,
+                    text="Negative Sentiment<br>Price Decrease",
+                    showarrow=False,
+                    font=dict(size=10, color='rgba(255,255,255,0.8)'),
+                    align='center'
+                )
+            ]
         )
         
         st.plotly_chart(fig, use_container_width=True)
