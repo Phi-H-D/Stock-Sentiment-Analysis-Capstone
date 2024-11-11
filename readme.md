@@ -57,15 +57,18 @@ FINVIZ_API_TOKEN=your_token_here
 ## Project Structure
 
 ```
-├── dashboard.py              # Streamlit dashboard application
-├── data_fetcher.py          # Data fetching utilities
-├── data_processor.py        # Data processing and transformation
-├── price_fetcher.py         # Real-time price data fetching
-├── rss feed with sentiment analyzers.py  # News fetching and sentiment analysis
-├── main.py                  # Main script for data pipeline
-├── requirements.txt         # Project dependencies
-├── config.py               # Configuration settings
-└── dummy_data_generator.py # Demo data generation script
+.
+├── data
+├── readme.md
+├── requirements.txt
+└── src
+    ├── config.py
+    ├── dashboard.py
+    ├── data_fetcher.py
+    ├── data_processor.py
+    ├── main.py
+    ├── price_fetcher.py
+    └── rss feed with sentiment analyzers.py
 ```
 
 ## Dashboard Usage
