@@ -12,8 +12,8 @@ A real-time dashboard for analyzing financial news sentiment and market trends. 
 - Market data integration with real-time price tracking
 - Interactive dashboard with:
   - Sentiment analysis results table
-  - Price trend visualization
-  - Volume-weighted sentiment analysis
+  - Price-Sentiment trend visualization
+  - Relative Volume-weighted sentiment analysis
   - Correlation metrics
 - Auto-refresh capability for real-time monitoring
 - Data export functionality
@@ -29,11 +29,10 @@ A real-time dashboard for analyzing financial news sentiment and market trends. 
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd <project-directory>
+git clone https://github.com/Phi-H-D/Stock-Sentiment-Analysis-Capstone
 ```
 
-2. Create and activate a virtual environment (recommended):
+2. Create and activate a virtual environment (not required):
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -49,7 +48,7 @@ pip install -r requirements.txt
 python -c "import nltk; nltk.download('vader_lexicon')"
 ```
 
-5. Create a `.env` file in the project root and add your FINVIZ API token:
+5. Create a `.env` file in the project root and add your FINVIZ API token or simply launch the Dashboard and input your API Token there:
 ```
 FINVIZ_API_TOKEN=your_token_here
 ```
