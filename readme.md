@@ -73,10 +73,35 @@ FINVIZ_API_TOKEN=your_token_here
 
 ## Dashboard Usage
 
-### Starting the Dashboard
-```bash
-streamlit run dashboard.py
-```
+## Running the Dashboard
+
+### Windows Users
+1. Double-click the `run_dashboard.bat` file in the project root directory
+2. A browser window will automatically open with the dashboard
+3. To stop the dashboard, close the command prompt window
+
+### Mac/Linux Users
+1. Open Terminal in the project root directory
+2. Make the script executable (first time only):
+   ```bash
+   chmod +x run_dashboard.sh
+   ```
+3. Run the script:
+   ```bash
+   ./run_dashboard.sh
+   ```
+4. A browser window will automatically open with the dashboard
+5. To stop the dashboard, press Ctrl+C in the terminal
+
+### Manual Launch (All Platforms)
+If you prefer to run the dashboard manually:
+1. Open a terminal/command prompt
+2. Navigate to the project root directory
+3. Run:
+   ```bash
+   cd src
+   streamlit run dashboard.py
+   ```
 
 ### Operating Modes
 
