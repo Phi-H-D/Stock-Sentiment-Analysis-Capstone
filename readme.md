@@ -102,7 +102,7 @@ streamlit run dashboard.py
    - Progress will be shown during refresh
 
 2. **Auto-Refresh** (Live Mode Only)
-   - Set desired interval (5, 10, 20, or 30 minutes)
+   - Set desired interval (5, 10, 20, or 30 minutes) (Recommend only doing 10 or higher, the Sentiment analysis models and data fetching take awhile)
    - Click "Start Auto-refresh" to begin automatic updates
    - Each refresh cycle will:
      1. Run main.py for market data
