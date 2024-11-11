@@ -126,7 +126,7 @@ streamlit run dashboard.py
 ### Sentiment Analysis Tab
 - Filter by ticker symbols
 - Set minimum sentiment threshold
-- Filter by relative volume (ranges from 0 to 1000x)
+- Filter by relative volume
 - View detailed sentiment scores from multiple models
 - Export data as CSV
 
