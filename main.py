@@ -5,9 +5,9 @@ from config import NEWS_FILE, SCREENER_FILE, OUTPUT_FILE
 
 def main():
     # Fetch and save data
-    print("Fetching and saving news data...")
+    #print("Fetching and saving news data...")
     news_data = export_news_data()
-    print("Fetching and saving screener data...")
+    #print("Fetching and saving screener data...")
     screener_data = export_screener_data()
 
     if news_data is None or screener_data is None:
@@ -19,18 +19,18 @@ def main():
         print("Unable to proceed. Required data is missing.")
         return
 
-    print("News data columns:", news_data.columns.tolist())
-    print("Screener data columns:", screener_data.columns.tolist())
+    #print("News data columns:", news_data.columns.tolist())
+    #print("Screener data columns:", screener_data.columns.tolist())
 
-    print("Processing data...")
+    #print("Processing data...")
     news_data = process_news_data(news_data)
     merged_data = merge_data(news_data, screener_data)
 
-    print("Fetching current prices...")
+    #print("Fetching current prices...")
     unique_tickers = merged_data['TICKER'].unique()
     current_prices = fetch_current_prices(unique_tickers)
 
-    print("Calculating trends...")
+    #print("Calculating trends...")
     merged_data = calculate_trends(merged_data, current_prices)
 
     result = prepare_final_data(merged_data)

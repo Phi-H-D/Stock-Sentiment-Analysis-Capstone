@@ -12,7 +12,6 @@ from bs4 import BeautifulSoup
 from nltk.sentiment import SentimentIntensityAnalyzer
 from finvader import finvader
 from transformers import pipeline
-import numpy as np
 
 # Global variable for FinBERT pipeline
 FINBERT_PIPELINE = None
