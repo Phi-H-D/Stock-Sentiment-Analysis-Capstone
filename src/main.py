@@ -1,9 +1,10 @@
 from data_fetcher import export_news_data, export_screener_data, load_data
 from data_processor import process_news_data, merge_data, calculate_trends, prepare_final_data
 from price_fetcher import fetch_current_prices
-from config import NEWS_FILE, SCREENER_FILE, OUTPUT_FILE
+from config import NEWS_FILE, SCREENER_FILE, OUTPUT_FILE, ensure_data_dir_exists
 
 def main():
+    ensure_data_dir_exists()
     # Fetch and save data
     #print("Fetching and saving news data...")
     news_data = export_news_data()

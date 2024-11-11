@@ -7,10 +7,14 @@ import plotly.express as px
 import streamlit as st
 import subprocess
 from dotenv import load_dotenv, set_key
-
-
-# Get the directory where the dashboard script is located
-SCRIPT_DIR = Path(__file__).parent.absolute()
+from config import (
+    PROJECT_ROOT,
+    DATA_DIR,
+    RSS_NEWS_FILE,
+    SCREENER_FILE,
+    get_env_file_path,
+    ensure_data_dir_exists
+)
 
 # Set page config
 st.set_page_config(
@@ -31,13 +35,9 @@ if 'refresh_interval' not in st.session_state:
 if 'demo_mode' not in st.session_state:
     st.session_state.demo_mode = False
 
-    
 def save_api_token(token):
     """Save the FINVIZ API token to .env file"""
-    env_path = SCRIPT_DIR / '.env'
-    if not env_path.exists():
-        env_path.touch()
-    
+    env_path = get_env_file_path()
     set_key(str(env_path), 'FINVIZ_API_TOKEN', token)
     st.success("API token saved successfully!")
     os.environ['FINVIZ_API_TOKEN'] = token
@@ -45,22 +45,24 @@ def save_api_token(token):
 def run_data_updates():
     """Run the main.py and RSS feed analyzer scripts"""
     try:
-        main_script = SCRIPT_DIR / 'main.py'
-        rss_script = SCRIPT_DIR / 'rss feed with sentiment analyzers.py'
+        # Get paths relative to project root
+        main_script = PROJECT_ROOT / 'src' / 'main.py'
+        rss_script = PROJECT_ROOT / 'src' / 'rss feed with sentiment analyzers.py'
         
         if not main_script.exists():
-            st.error(f"Cannot find main.py in {SCRIPT_DIR}")
+            st.error(f"Cannot find main.py in {main_script}")
             return False
         if not rss_script.exists():
-            st.error(f"Cannot find rss feed with sentiment analyzers.py in {SCRIPT_DIR}")
+            st.error(f"Cannot find rss feed with sentiment analyzers.py in {rss_script}")
             return False
         
+        # Run scripts from project root directory
         subprocess.run(['python', str(main_script)], 
                       check=True, 
-                      cwd=str(SCRIPT_DIR))
+                      cwd=str(PROJECT_ROOT))
         subprocess.run(['python', str(rss_script)], 
                       check=True,
-                      cwd=str(SCRIPT_DIR))
+                      cwd=str(PROJECT_ROOT))
         
         # Update last refresh time and calculate next refresh time
         st.session_state.last_refresh = datetime.now()
@@ -69,11 +71,15 @@ def run_data_updates():
     except Exception as e:
         st.error(f"Error running updates: {str(e)}")
         return False
-    
+
 def load_demo_data():
     """Generate and load demo data"""
     try:
+        # Import from src directory
+        import sys
+        sys.path.append(str(PROJECT_ROOT / 'src'))
         from dummy_data_generator import generate_dummy_data
+        
         sentiment_df, screener_df = generate_dummy_data()
         
         # Merge the dataframes
@@ -108,24 +114,22 @@ def load_data():
         return load_demo_data()
     
     try:
-        # Use correct paths for data files
-        sentiment_path = SCRIPT_DIR / 'yahoo_rss_news_with_sentiment_analysis.csv'
-        screener_path = SCRIPT_DIR / 'screener_data.csv'
+        ensure_data_dir_exists()
         
-        if not sentiment_path.exists():
-            st.error(f"Cannot find sentiment data file at {sentiment_path}")
+        if not RSS_NEWS_FILE.exists():
+            st.error(f"Cannot find sentiment data file at {RSS_NEWS_FILE}")
             return None
-        if not screener_path.exists():
-            st.error(f"Cannot find screener data file at {screener_path}")
+        if not SCREENER_FILE.exists():
+            st.error(f"Cannot find screener data file at {SCREENER_FILE}")
             return None
         
         # Load RSS sentiment data
-        sentiment_df = pd.read_csv(sentiment_path)
+        sentiment_df = pd.read_csv(RSS_NEWS_FILE)
         sentiment_df['ticker'] = sentiment_df['ticker'].str.strip('"\'')
         sentiment_df['price_change'] = sentiment_df['price_after'] - sentiment_df['price_at_news']
         
         # Load screener data
-        screener_df = pd.read_csv(screener_path)
+        screener_df = pd.read_csv(SCREENER_FILE)
         screener_df = screener_df.rename(columns={'Ticker': 'TICKER'})
         screener_df['TICKER'] = screener_df['TICKER'].str.strip('"\'')
         
@@ -162,11 +166,12 @@ with st.sidebar:
     
     if not st.session_state.demo_mode:
         # Regular mode settings
-        st.text(f"Working directory:\n{SCRIPT_DIR}")
+        st.text(f"Project directory:\n{PROJECT_ROOT}")
+        st.text(f"Data directory:\n{DATA_DIR}")
         
         # API Token Management
         st.subheader("API Token Management")
-        load_dotenv(SCRIPT_DIR / '.env')
+        load_dotenv(get_env_file_path())
         current_token = os.getenv('FINVIZ_API_TOKEN', '')
         
         if current_token:

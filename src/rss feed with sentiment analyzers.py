@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from nltk.sentiment import SentimentIntensityAnalyzer
 from finvader import finvader
 from transformers import pipeline
+from config import OUTPUT_FILE, RSS_NEWS_FILE, ensure_data_dir_exists
 
 # Global variable for FinBERT pipeline
 FINBERT_PIPELINE = None
@@ -19,6 +20,7 @@ FINBERT_PIPELINE = None
 # Initialize sentiment analyzers
 print("Initializing sentiment analyzers...")
 nltk_sia = SentimentIntensityAnalyzer()
+
 def initialize_finbert():
     global FINBERT_PIPELINE
     if FINBERT_PIPELINE is None:
@@ -238,8 +240,9 @@ def get_price_trend(ticker, news_time):
         }
 
 def main():
+    ensure_data_dir_exists()
     try:
-        df = pd.read_csv('finviz_news_and_stock_data.csv')
+        df = pd.read_csv(OUTPUT_FILE)
         tickers = df['TICKER'].unique()
     except FileNotFoundError:
         print("Error: 'finviz_news_and_stock_data.csv' not found. Please ensure the file exists.")
@@ -279,7 +282,7 @@ def main():
                   for analyzer in ['nltk', 'finvader', 'finbert']]
         news_df[f'aggregate_{column_type}_sentiment'] = news_df[columns].mean(axis=1)
 
-    output_file = 'yahoo_rss_news_with_sentiment_analysis.csv'
+    output_file = RSS_NEWS_FILE
     news_df.to_csv(output_file, index=False, quoting=csv.QUOTE_ALL)
     print(f"News data with sentiment analysis saved to '{output_file}'")
     print(f"Total news items: {len(news_df)}")
