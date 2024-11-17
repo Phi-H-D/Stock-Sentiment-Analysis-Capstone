@@ -72,6 +72,36 @@ def run_data_updates():
         st.error(f"Error running updates: {str(e)}")
         return False
 
+def filter_data_with_sentiments(data, selected_tickers, sentiment_config, min_volume):
+    """
+    Filter data based on enabled sentiment thresholds and volume
+    
+    Args:
+        data: DataFrame containing the data
+        selected_tickers: List of selected ticker symbols
+        sentiment_config: Dict containing enabled status and threshold for each sentiment
+        min_volume: Minimum relative volume threshold
+    """
+    mask = data['ticker'].isin(selected_tickers)
+    
+    # Apply enabled sentiment filters
+    if sentiment_config['nltk']['enabled']:
+        mask = mask & (data['nltk_body_sentiment'] >= sentiment_config['nltk']['threshold'])
+    
+    if sentiment_config['finvader']['enabled']:
+        mask = mask & (data['finvader_body_sentiment'] >= sentiment_config['finvader']['threshold'])
+    
+    if sentiment_config['finbert']['enabled']:
+        mask = mask & (data['finbert_body_sentiment'] >= sentiment_config['finbert']['threshold'])
+    
+    if sentiment_config['aggregate']['enabled']:
+        mask = mask & (data['aggregate_body_sentiment'] >= sentiment_config['aggregate']['threshold'])
+    
+    # Apply volume filter
+    mask = mask & (data['Relative Volume'] >= min_volume)
+    
+    return data[mask]
+
 def load_demo_data():
     """Generate and load demo data"""
     try:
@@ -246,9 +276,10 @@ with tab1:
     data = load_data()
     
     if data is not None:
-        # Filter options with three columns
-        col1, col2, col3 = st.columns(3)
-        with col1:
+        # Create two rows of columns for filters
+        row1_col1, row1_col2 = st.columns([1, 2])
+        
+        with row1_col1:
             # Pre-select all tickers by default
             all_tickers = sorted(data['ticker'].unique())
             selected_tickers = st.multiselect(
@@ -257,16 +288,7 @@ with tab1:
                 default=all_tickers
             )
         
-        with col2:
-            min_sentiment = st.slider(
-                "Minimum Aggregate Body Sentiment",
-                min_value=-1.0,
-                max_value=1.0,
-                value=-1.0,
-                step=0.1
-            )
-        
-        with col3:
+        with row1_col2:
             min_volume = st.number_input(
                 "Minimum Relative Volume",
                 min_value=0.0,
@@ -276,12 +298,111 @@ with tab1:
                 format="%.1f"
             )
         
-        # Filter data with added volume filter
-        filtered_data = data[
-            (data['ticker'].isin(selected_tickers)) &
-            (data['aggregate_body_sentiment'] >= min_sentiment) &
-            (data['Relative Volume'] >= min_volume)
-        ]
+        # Create sentiment filter section
+        st.subheader("Sentiment Filters")
+        
+        # Initialize sentiment configuration
+        sentiment_config = {
+            'nltk': {'enabled': False, 'threshold': -1.0},
+            'finvader': {'enabled': False, 'threshold': -1.0},
+            'finbert': {'enabled': False, 'threshold': -1.0},
+            'aggregate': {'enabled': True, 'threshold': -1.0}  # Aggregate enabled by default
+        }
+        
+        # Create two columns for sentiment filters
+        sent_col1, sent_col2 = st.columns(2)
+        
+        with sent_col1:
+            # NLTK sentiment filter
+            st.write("NLTK Sentiment Filter")
+            sentiment_config['nltk']['enabled'] = st.checkbox(
+                "Enable NLTK Filter",
+                value=False,
+                key='nltk_enabled'
+            )
+            if sentiment_config['nltk']['enabled']:
+                sentiment_config['nltk']['threshold'] = st.slider(
+                    "Minimum NLTK Sentiment",
+                    min_value=-1.0,
+                    max_value=1.0,
+                    value=-1.0,
+                    step=0.1,
+                    help="Filter articles based on NLTK sentiment score",
+                    key='nltk_slider'
+                )
+            
+            # FinVADER sentiment filter
+            st.write("FinVADER Sentiment Filter")
+            sentiment_config['finvader']['enabled'] = st.checkbox(
+                "Enable FinVADER Filter",
+                value=False,
+                key='finvader_enabled'
+            )
+            if sentiment_config['finvader']['enabled']:
+                sentiment_config['finvader']['threshold'] = st.slider(
+                    "Minimum FinVADER Sentiment",
+                    min_value=-1.0,
+                    max_value=1.0,
+                    value=-1.0,
+                    step=0.1,
+                    help="Filter articles based on FinVADER sentiment score",
+                    key='finvader_slider'
+                )
+        
+        with sent_col2:
+            # FinBERT sentiment filter
+            st.write("FinBERT Sentiment Filter")
+            sentiment_config['finbert']['enabled'] = st.checkbox(
+                "Enable FinBERT Filter",
+                value=False,
+                key='finbert_enabled'
+            )
+            if sentiment_config['finbert']['enabled']:
+                sentiment_config['finbert']['threshold'] = st.slider(
+                    "Minimum FinBERT Sentiment",
+                    min_value=-1.0,
+                    max_value=1.0,
+                    value=-1.0,
+                    step=0.1,
+                    help="Filter articles based on FinBERT sentiment score",
+                    key='finbert_slider'
+                )
+            
+            # Aggregate sentiment filter
+            st.write("Aggregate Sentiment Filter")
+            sentiment_config['aggregate']['enabled'] = st.checkbox(
+                "Enable Aggregate Filter",
+                value=True,  # Enabled by default
+                key='aggregate_enabled'
+            )
+            if sentiment_config['aggregate']['enabled']:
+                sentiment_config['aggregate']['threshold'] = st.slider(
+                    "Minimum Aggregate Sentiment",
+                    min_value=-1.0,
+                    max_value=1.0,
+                    value=-1.0,
+                    step=0.1,
+                    help="Filter articles based on aggregate sentiment score",
+                    key='aggregate_slider'
+                )
+        
+        # Add a divider between filters and results
+        st.divider()
+        
+        # Filter data with enabled sentiment thresholds
+        filtered_data = filter_data_with_sentiments(
+            data,
+            selected_tickers,
+            sentiment_config,
+            min_volume
+        )
+        
+        # Display active filters
+        active_filters = [name.upper() for name, config in sentiment_config.items() if config['enabled']]
+        if active_filters:
+            st.write("Active sentiment filters:", ", ".join(active_filters))
+        else:
+            st.warning("No sentiment filters are currently enabled. All sentiment values will be shown.")
         
         if not filtered_data.empty:
             # Select columns to display
