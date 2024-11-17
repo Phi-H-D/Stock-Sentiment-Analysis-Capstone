@@ -71,8 +71,6 @@ FINVIZ_API_TOKEN=your_token_here
     └── rss feed with sentiment analyzers.py
 ```
 
-## Dashboard Usage
-
 ## Running the Dashboard
 
 ### Windows Users
